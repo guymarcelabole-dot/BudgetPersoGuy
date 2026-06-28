@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BudgetGuy" />
+  <meta name="theme-color" content="#0F1923" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>BudgetGuy 2026</title>
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --bg:        #0F1923;
+      --surface:   #162030;
+      --card:      #1D2D40;
+      --border:    #253548;
+      --accent:    #00C896;
+      --accent2:   #F5A623;
+      --accent3:   #E05252;
+      --accent4:   #5B8DEF;
+      --text:      #E8EDF2;
+      --muted:     #7A8FA6;
+      --safe:      env(safe-area-inset-bottom, 0px);
+      --radius:    14px;
+      --font:      'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,25,35,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 14px 20px 10px;
+      padding-top: calc(14px + env(safe-area-inset-top, 0px));
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-month {
+      font-size: 13px; color: var(--accent); font-weight: 600;
+      background: rgba(0,200,150,0.12); padding: 4px 10px; border-radius: 20px;
+      cursor: pointer;
+    }
+
+    /* ── NAV ── */
+    .nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(22,32,48,0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: var(--safe);
+    }
+    .nav-item {
+      flex: 1; padding: 10px 4px 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; border: none; background: none; color: var(--muted);
+      font-size: 10px; font-weight: 500; letter-spacing: 0.2px;
+      transition: color 0.2s;
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { font-size: 20px; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; padding: 16px 16px 90px; }
+    .screen.active { display: block; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+    }
+    .card-header {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;
+    }
+
+    /* ── KPI GRID ── */
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 12px;
+    }
+    .kpi-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+    .kpi-value { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+    .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .kpi.accent { border-color: rgba(0,200,150,0.3); background: rgba(0,200,150,0.06); }
+    .kpi.warn { border-color: rgba(245,166,35,0.3); background: rgba(245,166,35,0.06); }
+    .kpi.danger { border-color: rgba(224,82,82,0.3); background: rgba(224,82,82,0.06); }
+
+    /* ── WALLET CARDS ── */
+    .wallet-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scroll-snap-type: x mandatory; }
+    .wallet-row::-webkit-scrollbar { display: none; }
+    .wallet-card {
+      min-width: 160px; padding: 16px; border-radius: var(--radius);
+      scroll-snap-align: start; position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    .wallet-card.wave { background: linear-gradient(135deg, #00B894, #00796B); }
+    .wallet-card.djamo { background: linear-gradient(135deg, #6C5CE7, #4A00E0); }
+    .wallet-card.orange { background: linear-gradient(135deg, #F5A623, #E07B00); }
+    .wallet-card.cash { background: linear-gradient(135deg, #2D3A4A, #1a2535); border: 1px solid var(--border); }
+    .wallet-name { font-size: 11px; font-weight: 600; opacity: 0.8; margin-bottom: 6px; }
+    .wallet-balance { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .wallet-spent { font-size: 11px; opacity: 0.75; margin-top: 4px; }
+    .wallet-emoji { position: absolute; right: 12px; top: 12px; font-size: 22px; opacity: 0.6; }
+
+    /* ── PROGRESS BARS ── */
+    .progress-wrap { margin-bottom: 8px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .progress-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .fill-green { background: var(--accent); }
+    .fill-orange { background: var(--accent2); }
+    .fill-red { background: var(--accent3); }
+    .fill-blue { background: var(--accent4); }
+
+    /* ── TRANSACTION LIST ── */
+    .tx-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .tx-item:last-child { border-bottom: none; }
+    .tx-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-cat { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-desc { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-right { text-align: right; flex-shrink: 0; }
+    .tx-amount { font-size: 14px; font-weight: 700; color: var(--accent3); }
+    .tx-date { font-size: 10px; color: var(--muted); }
+    .tx-wallet-badge { font-size: 9px; padding: 2px 6px; border-radius: 8px; font-weight: 600; margin-top: 2px; display: inline-block; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; right: 20px; bottom: calc(70px + var(--safe) + 10px); z-index: 99;
+      width: 54px; height: 54px; border-radius: 27px;
+      background: var(--accent); border: none; color: #0F1923;
+      font-size: 26px; font-weight: 300; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,200,150,0.4);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .fab:active { transform: scale(0.92); box-shadow: 0 2px 10px rgba(0,200,150,0.3); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      display: none; align-items: flex-end;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border-top: 1px solid var(--border);
+      border-radius: 20px 20px 0 0; width: 100%;
+      padding: 20px 20px calc(20px + var(--safe));
+      max-height: 90dvh; overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+    .form-input, .form-select {
+      width: 100%; padding: 12px 14px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); font-size: 15px; font-family: var(--font);
+      outline: none; appearance: none; -webkit-appearance: none;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--accent); }
+    .form-input[type="number"] { -moz-appearance: textfield; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      width: 100%; padding: 14px; border-radius: 12px; border: none;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      font-family: var(--font); transition: opacity 0.15s;
+    }
+    .btn:active { opacity: 0.8; }
+    .btn-primary { background: var(--accent); color: #0F1923; }
+    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); margin-top: 8px; }
+    .btn-danger { background: var(--accent3); color: white; }
+
+    /* ── BUDGET SCREEN ── */
+    .section-title { font-size: 14px; font-weight: 700; color: var(--muted); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .budget-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: 6px;
+    }
+    .budget-cat { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; padding-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .budget-amount { font-size: 14px; font-weight: 700; color: var(--accent2); flex-shrink: 0; }
+
+    /* ── CHART ── */
+    canvas { width: 100% !important; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .tab {
+      padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); background: transparent;
+      color: var(--muted); font-family: var(--font); transition: all 0.2s;
+    }
+    .tab.active { background: var(--accent); color: #0F1923; border-color: var(--accent); }
+
+    /* ── MONTH PICKER ── */
+    .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .month-btn {
+      padding: 10px 4px; text-align: center; border-radius: 10px; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); font-family: var(--font);
+      transition: all 0.15s;
+    }
+    .month-btn.active { background: var(--accent); color: #0F1923; border-color: var(--accent); }
+    .month-btn.has-data { border-color: rgba(0,200,150,0.3); color: var(--accent); }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .empty-sub { font-size: 13px; }
+
+    /* ── METRICS ── */
+    .metric-ring { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .metric-ring:last-child { border-bottom: none; }
+    .ring-container { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+    .ring-label-inside { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    .metric-info { flex: 1; }
+    .metric-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+    .metric-detail { font-size: 11px; color: var(--muted); }
+    .metric-value { font-size: 15px; font-weight: 700; text-align: right; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; top: calc(70px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+      background: var(--accent); color: #0F1923; padding: 10px 20px;
+      border-radius: 20px; font-size: 14px; font-weight: 600; z-index: 300;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── CHIPS ── */
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chip {
+      padding: 5px 10px; border-radius: 16px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: var(--font); transition: all 0.15s;
+    }
+    .chip.selected { background: var(--accent); color: #0F1923; border-color: var(--accent); }
+
+    .color-wave { color: #00C896; }
+    .color-djamo { color: #9B8CF0; }
+    .color-orange { color: #F5A623; }
+    .color-cash { color: #7A8FA6; }
+
+    .delete-btn { background: none; border: none; color: var(--accent3); font-size: 18px; cursor: pointer; padding: 4px; }
+    .swipe-item { position: relative; }
+
+    .revenue-badge { background: rgba(0,200,150,0.15); color: var(--accent); padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">💰 BudgetGuy</div>
+  <div class="header-month" onclick="openMonthPicker()" id="currentMonthLabel">Juin 2026</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FAB -->
+<button class="fab" onclick="openAddModal()" id="fab">+</button>
+
+<!-- ══════════════ DASHBOARD SCREEN ══════════════ -->
+<div class="screen active" id="screen-dashboard">
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi accent">
+      <div class="kpi-label">Revenus</div>
+      <div class="kpi-value" id="kpi-income">0 F</div>
+      <div class="kpi-sub" id="kpi-income-sub">ce mois</div>
+    </div>
+    <div class="kpi" id="kpi-solde-card">
+      <div class="kpi-label">Solde net</div>
+      <div class="kpi-value" id="kpi-solde">0 F</div>
+      <div class="kpi-sub" id="kpi-solde-sub">disponible</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-label">Taux épargne</div>
+      <div class="kpi-value" id="kpi-rate">0%</div>
+      <div class="kpi-sub" id="kpi-rate-sub">objectif 30%</div>
+    </div>
+    <div class="kpi" id="kpi-budget-card">
+      <div class="kpi-label">Budget consommé</div>
+      <div class="kpi-value" id="kpi-budget-pct">0%</div>
+      <div class="kpi-sub" id="kpi-budget-sub">sur le mois</div>
+    </div>
+  </div>
+
+  <!-- DÉPENSES BUDGÉTÉES VS RÉEL -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-header">💸 Budgété vs Réel</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="text-align:center;flex:1">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">BUDGÉTÉ</div>
+        <div style="font-size:17px;font-weight:800;color:var(--accent2)" id="dash-budget-total">0 F</div>
+      </div>
+      <div style="width:1px;height:32px;background:var(--border)"></div>
+      <div style="text-align:center;flex:1">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">RÉEL</div>
+        <div style="font-size:17px;font-weight:800;color:var(--accent3)" id="dash-spent-total">0 F</div>
+      </div>
+      <div style="width:1px;height:32px;background:var(--border)"></div>
+      <div style="text-align:center;flex:1">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">RESTE</div>
+        <div style="font-size:17px;font-weight:800" id="dash-ecart-total">0 F</div>
+      </div>
+    </div>
+    <div class="progress-track" style="height:8px;border-radius:4px">
+      <div class="progress-fill" id="dash-budget-bar" style="width:0%;background:var(--accent3);height:8px;border-radius:4px;transition:width 0.6s ease"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:5px;text-align:center" id="dash-budget-msg"></div>
+  </div>
+
+  <!-- ALERTES BUDGET ÉPUISÉ -->
+  <div id="dash-alertes"></div>
+
+  <!-- WALLETS -->
+  <div class="wallet-row" id="wallet-row">
+    <div class="wallet-card wave">
+      <div class="wallet-emoji">🌊</div>
+      <div class="wallet-name">WAVE</div>
+      <div class="wallet-balance" id="w-wave">0 F</div>
+      <div class="wallet-spent" id="ws-wave">Dépensé: 0 F</div>
+      <div class="wallet-spent" id="wb-wave" style="font-size:10px;opacity:0.65"></div>
+    </div>
+    <div class="wallet-card djamo">
+      <div class="wallet-emoji">💳</div>
+      <div class="wallet-name">DJAMO</div>
+      <div class="wallet-balance" id="w-djamo">0 F</div>
+      <div class="wallet-spent" id="ws-djamo">Dépensé: 0 F</div>
+      <div class="wallet-spent" id="wb-djamo" style="font-size:10px;opacity:0.65"></div>
+    </div>
+    <div class="wallet-card orange">
+      <div class="wallet-emoji">🟠</div>
+      <div class="wallet-name">ORANGE MONEY</div>
+      <div class="wallet-balance" id="w-orange">0 F</div>
+      <div class="wallet-spent" id="ws-orange">Dépensé: 0 F</div>
+      <div class="wallet-spent" id="wb-orange" style="font-size:10px;opacity:0.65"></div>
+    </div>
+    <div class="wallet-card cash">
+      <div class="wallet-emoji">💵</div>
+      <div class="wallet-name">CASH</div>
+      <div class="wallet-balance" id="w-cash">0 F</div>
+      <div class="wallet-spent" id="ws-cash">Dépensé: 0 F</div>
+      <div class="wallet-spent" id="wb-cash" style="font-size:10px;opacity:0.65"></div>
+    </div>
+  </div>
+
+  <!-- BUDGET PROGRESS -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="card-header" style="margin-bottom:0">Budget par catégorie</div>
+      <div style="font-size:11px;color:var(--muted)" id="progress-summary"></div>
+    </div>
+    <div id="budget-progress-list">
+      <div class="empty"><div class="empty-sub">Budget pré-chargé depuis ton fichier Excel</div></div>
+    </div>
+  </div>
+
+  <!-- RECENT TRANSACTIONS -->
+  <div class="card">
+    <div class="card-header">Dernières transactions</div>
+    <div id="recent-tx-list">
+      <div class="empty">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">Aucune dépense</div>
+        <div class="empty-sub">Appuyez sur + pour ajouter une transaction</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TRANSACTIONS SCREEN ══════════════ -->
+<div class="screen" id="screen-transactions">
+  <div class="tabs">
+    <button class="tab active" onclick="filterTx('all', this)">Tout</button>
+    <button class="tab" onclick="filterTx('wave', this)">Wave</button>
+    <button class="tab" onclick="filterTx('djamo', this)">Djamo</button>
+    <button class="tab" onclick="filterTx('orange', this)">Orange</button>
+    <button class="tab" onclick="filterTx('cash', this)">Cash</button>
+  </div>
+  <div id="tx-list"></div>
+</div>
+
+<!-- ══════════════ BUDGET SCREEN ══════════════ -->
+<div class="screen" id="screen-budget">
+  <div class="card">
+    <div class="card-header">Budget Mensuel — <span id="budget-month-label">Juin 2026</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Définissez vos budgets par catégorie pour ce mois.</p>
+    <button class="btn btn-primary" onclick="openBudgetEditor()">✏️ Modifier le budget</button>
+  </div>
+
+  <div id="budget-cat-list"></div>
+</div>
+
+<!-- ══════════════ ANALYTICS SCREEN ══════════════ -->
+<div class="screen" id="screen-analytics">
+  <div class="card">
+    <div class="card-header">Analyse — <span id="analytics-month-label">Juin 2026</span></div>
+    <canvas id="cat-chart" height="250"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Répartition par portefeuille</div>
+    <canvas id="wallet-chart" height="220"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Métriques avancées</div>
+    <div id="advanced-metrics"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Charges par groupe</div>
+    <div id="group-metrics"></div>
+  </div>
+
+  <!-- EXPORT CARD -->
+  <div class="card" style="border-color:rgba(0,200,150,0.3);background:rgba(0,200,150,0.05)">
+    <div class="card-header">📤 Export Excel</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Exporte toutes tes transactions du mois dans un fichier Excel — prêt à coller dans ton fichier budget.</p>
+    <button class="btn btn-primary" onclick="exportExcel()" style="margin-bottom:8px">📥 Télécharger Excel — <span id="export-month-label">Juin 2026</span></button>
+    <button class="btn btn-secondary" onclick="exportCSV()">📄 Télécharger CSV (alternative)</button>
+  </div>
+</div>
+
+<!-- ══════════════ BOTTOM NAV ══════════════ -->
+<nav class="nav">
+  <button class="nav-item active" onclick="showScreen('dashboard', this)">
+    <span class="nav-icon">🏠</span>Accueil
+  </button>
+  <button class="nav-item" onclick="showScreen('transactions', this)">
+    <span class="nav-icon">📋</span>Transactions
+  </button>
+  <button class="nav-item" onclick="showScreen('budget', this)">
+    <span class="nav-icon">🎯</span>Budget
+  </button>
+  <button class="nav-item" onclick="showScreen('analytics', this)">
+    <span class="nav-icon">📈</span>Analyse
+  </button>
+</nav>
+
+<!-- ══════════ MODAL: ADD TRANSACTION ══════════ -->
+<div class="modal-overlay" id="modal-add" onclick="closeModal('modal-add', event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nouvelle transaction</div>
+
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <div class="chips">
+        <div class="chip selected" onclick="selectType('depense', this)" id="type-depense">💸 Dépense</div>
+        <div class="chip" onclick="selectType('revenu', this)" id="type-revenu">💰 Revenu</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="tx-date" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Montant (FCFA)</label>
+        <input type="number" class="form-input" id="tx-amount" placeholder="0" inputmode="numeric" />
+      </div>
+    </div>
+
+    <div class="form-group" id="cat-group">
+      <label class="form-label">Catégorie</label>
+      <select class="form-select" id="tx-category"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Portefeuille</label>
+      <select class="form-select" id="tx-wallet">
+        <option value="wave">Wave</option>
+        <option value="coffre_wave">Coffre Wave</option>
+        <option value="djamo">Djamo</option>
+        <option value="orange">Orange Money</option>
+        <option value="cash">Cash / Enveloppe</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description (optionnel)</label>
+      <input type="text" class="form-input" id="tx-desc" placeholder="ex: KFC, Transport sami…" />
+    </div>
+
+    <button class="btn btn-primary" onclick="saveTx()">Enregistrer</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-add')">Annuler</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: MONTH PICKER ══════════ -->
+<div class="modal-overlay" id="modal-month" onclick="closeModal('modal-month', event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Choisir le mois</div>
+    <div class="month-grid" id="month-grid"></div>
+    <button class="btn btn-secondary" style="margin-top:14px" onclick="closeModal('modal-month')">Fermer</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: BUDGET EDITOR ══════════ -->
+<div class="modal-overlay" id="modal-budget" onclick="closeModal('modal-budget', event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Budget — <span id="budget-editor-month"></span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Saisissez les montants budgétisés par catégorie.</p>
+    <div id="budget-editor-fields"></div>
+    <button class="btn btn-primary" onclick="saveBudget()">💾 Enregistrer le budget</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-budget')">Annuler</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: REVENUS CONFIG ══════════ -->
+<div class="modal-overlay" id="modal-revenus" onclick="closeModal('modal-revenus', event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Revenus du mois</div>
+    <div class="form-group">
+      <label class="form-label">Salaire principal (FCFA)</label>
+      <input type="number" class="form-input" id="rev-salaire" placeholder="957500" inputmode="numeric" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">13e mois (si applicable)</label>
+      <input type="number" class="form-input" id="rev-13e" placeholder="0" inputmode="numeric" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">14e mois (si applicable)</label>
+      <input type="number" class="form-input" id="rev-14e" placeholder="0" inputmode="numeric" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Revenus supplémentaires</label>
+      <input type="number" class="form-input" id="rev-extra" placeholder="0" inputmode="numeric" />
+    </div>
+    <button class="btn btn-primary" onclick="saveRevenus()">Enregistrer</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-revenus')">Annuler</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA & CONSTANTS
+// ═══════════════════════════════════════════════
+
+const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+const CATEGORIES = [
+  // Travail
+  { id: 'nourriture_travail', label: 'Nourriture Travail', group: 'Travail', emoji: '🍽️' },
+  { id: 'transport_travail', label: 'Transport Travail', group: 'Travail', emoji: '🚌' },
+  // Maison
+  { id: 'facture_cie', label: 'Facture CIE', group: 'Maison', emoji: '💡' },
+  { id: 'facture_sodeci', label: 'Facture SODECI', group: 'Maison', emoji: '💧' },
+  { id: 'facture_internet', label: 'Facture Internet', group: 'Maison', emoji: '📡' },
+  { id: 'facture_menagere', label: 'Facture Ménagère', group: 'Maison', emoji: '🏠' },
+  { id: 'produits_maison', label: 'Produits Maison', group: 'Maison', emoji: '🧹' },
+  { id: 'loyer_sami', label: 'Loyer Maison Sami', group: 'Maison', emoji: '🏘️' },
+  { id: 'argent_poche_sami', label: 'Argent de poche Sami', group: 'Famille', emoji: '👦' },
+  // Yemi
+  { id: 'alimentation_yemi', label: 'Alimentation Yemi', group: 'Yemi', emoji: '🍼' },
+  { id: 'sante_yemi', label: 'Santé Yemi', group: 'Yemi', emoji: '🏥' },
+  { id: 'hygiene_yemi', label: 'Hygiène Yemi', group: 'Yemi', emoji: '🧴' },
+  { id: 'vetements_yemi', label: 'Vêtements Yemi', group: 'Yemi', emoji: '👗' },
+  // Famille
+  { id: 'nourriture_guy', label: 'Nourriture Maison Guy', group: 'Famille', emoji: '🍛' },
+  { id: 'loyer_caro', label: 'Loyer Maison Caro', group: 'Famille', emoji: '🏡' },
+  { id: 'participation_papa', label: 'Participation nourriture papa', group: 'Famille', emoji: '👨‍👩‍👧' },
+  // Église
+  { id: 'dime', label: 'Dîme / Denier de culte', group: 'Église', emoji: '⛪' },
+  { id: 'dons', label: 'Dons', group: 'Église', emoji: '🤲' },
+  { id: 'quete', label: 'Quête & Transport Église', group: 'Église', emoji: '🙏' },
+  // Entretien
+  { id: 'entretien_coiffure', label: 'Coiffure & Pressing', group: 'Entretien', emoji: '💈' },
+  { id: 'entretien_savon', label: 'Savon & Skincare', group: 'Entretien', emoji: '🧼' },
+  { id: 'entretien_parfum', label: 'Parfums & Entretien', group: 'Entretien', emoji: '🌸' },
+  // Formation
+  { id: 'toastmaster', label: 'Toastmaster', group: 'Formation', emoji: '🎤' },
+  { id: 'transport_tm', label: 'Transport TM & Livres', group: 'Formation', emoji: '📚' },
+  // Autres
+  { id: 'frais_bancaires', label: 'Frais Bancaires & Djamo', group: 'Autres', emoji: '🏦' },
+  { id: 'cotisation_imprevus', label: 'Cotisation Imprévus', group: 'Autres', emoji: '🎉' },
+  { id: 'telephone_internet', label: 'Téléphone & Internet perso', group: 'Autres', emoji: '📱' },
+  { id: 'reparation_vetement', label: 'Réparation Vêtement', group: 'Autres', emoji: '🧵' },
+  { id: 'sport_sante', label: 'Sport / Santé', group: 'Plaisir', emoji: '💪' },
+  { id: 'sorties', label: 'Sorties Weekend', group: 'Plaisir', emoji: '🎊' },
+  { id: 'transport_perso', label: 'Transport personnel', group: 'Plaisir', emoji: '🚕' },
+  { id: 'activite_decouverte', label: 'Activité découverte', group: 'Plaisir', emoji: '🌟' },
+];
+
+const WALLET_LABELS = {
+  wave: 'Wave', coffre_wave: 'Coffre Wave', djamo: 'Djamo', orange: 'Orange Money', cash: 'Cash'
+};
+const WALLET_COLORS = {
+  wave: '#00C896', coffre_wave: '#00a57a', djamo: '#9B8CF0', orange: '#F5A623', cash: '#7A8FA6'
+};
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+
+let currentMonth = new Date().getMonth(); // 0-indexed
+let currentYear = new Date().getFullYear();
+let currentTxType = 'depense';
+let txFilter = 'all';
+
+function getKey(suffix) { return `budgetguy_${currentYear}_${currentMonth}_${suffix}`; }
+
+function getData(suffix, def = {}) {
+  try { return JSON.parse(localStorage.getItem(getKey(suffix))) || def; } catch { return def; }
+}
+function saveData(suffix, val) {
+  localStorage.setItem(getKey(suffix), JSON.stringify(val));
+}
+
+function getTxs() { return getData('txs', []); }
+function saveTxs(txs) { saveData('txs', txs); }
+function getBudget() { return getData('budget', {}); }
+// budget_wallets format: { cat_id: [{wallet:'wave', amount:10000}, {wallet:'djamo', amount:20000}] }
+function getBudgetWallets() { return getData('budget_wallets', {}); }
+function saveBudgetWallets(bw) { saveData('budget_wallets', bw); }
+
+// Calcule le budget total d'une catégorie (somme de toutes ses parts par portefeuille)
+function catBudgetTotal(catId, bw) {
+  const splits = bw[catId];
+  if (!splits || splits.length === 0) return 0;
+  return splits.reduce((s, x) => s + (x.amount||0), 0);
+}
+
+// Calcule le budget réel par portefeuille (assigné manuellement, multi-split)
+function walletBudgetReal(budget, bw) {
+  const result = { wave:0, coffre_wave:0, djamo:0, orange:0, cash:0 };
+  CATEGORIES.forEach(c => {
+    const splits = bw[c.id];
+    if (!splits) return;
+    splits.forEach(s => {
+      if (s.wallet && s.amount > 0) result[s.wallet] = (result[s.wallet]||0) + s.amount;
+    });
+  });
+  // Merge coffre_wave into wave for display
+  result.wave += result.coffre_wave || 0;
+  return result;
+}
+
+// Retourne le budget total par catégorie (depuis bw si dispo, sinon depuis budget legacy)
+function getBudgetForCat(catId, budget, bw) {
+  const splits = bw[catId];
+  if (splits && splits.length > 0) return splits.reduce((s,x)=>s+(x.amount||0),0);
+  return budget[catId] || 0;
+}
+
+// Construit un résumé budget global (total par cat) depuis les splits
+function buildBudgetFromSplits(bw, legacyBudget) {
+  const result = {};
+  CATEGORIES.forEach(c => {
+    const total = getBudgetForCat(c.id, legacyBudget, bw);
+    if (total > 0) result[c.id] = total;
+  });
+  return result;
+}
+function getRevenus() { return getData('revenus', { salaire: 957500, e13: 0, e14: 0, extra: 0 }); }
+
+// ═══════════════════════════════════════════════
+//  COMPUTED
+// ═══════════════════════════════════════════════
+
+function totalRevenus() {
+  const r = getRevenus();
+  return (r.salaire||0) + (r.e13||0) + (r.e14||0) + (r.extra||0);
+}
+
+function totalDepenses() {
+  return getTxs().filter(t => t.type === 'depense').reduce((s, t) => s + t.amount, 0);
+}
+
+function depensesByWallet() {
+  const m = {};
+  getTxs().filter(t => t.type === 'depense').forEach(t => {
+    const w = walletGroup(t.wallet);
+    m[w] = (m[w] || 0) + t.amount;
+  });
+  return m;
+}
+
+function walletGroup(w) {
+  if (w === 'coffre_wave') return 'wave';
+  return w;
+}
+
+function depensesByCat() {
+  const m = {};
+  getTxs().filter(t => t.type === 'depense').forEach(t => {
+    m[t.category] = (m[t.category] || 0) + t.amount;
+  });
+  return m;
+}
+
+// ═══════════════════════════════════════════════
+//  FORMAT
+// ═══════════════════════════════════════════════
+
+function fmt(n) {
+  if (Math.abs(n) >= 1000000) return (n/1000000).toFixed(1) + 'M F';
+  if (Math.abs(n) >= 1000) return Math.round(n/1000) + 'k F';
+  return Math.round(n) + ' F';
+}
+function fmtFull(n) {
+  return new Intl.NumberFormat('fr-FR').format(Math.round(n)) + ' FCFA';
+}
+function pct(a, b) { return b > 0 ? Math.round(a / b * 100) : 0; }
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+
+function showScreen(id, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('fab').style.display = id === 'dashboard' || id === 'transactions' ? 'flex' : 'none';
+  if (id === 'analytics') renderAnalytics();
+  if (id === 'budget') renderBudgetScreen();
+  if (id === 'transactions') renderTxList();
+}
+
+// ═══════════════════════════════════════════════
+//  MONTH PICKER
+// ═══════════════════════════════════════════════
+
+function openMonthPicker() {
+  const grid = document.getElementById('month-grid');
+  grid.innerHTML = MONTHS.map((m, i) => {
+    const hasTx = localStorage.getItem(`budgetguy_${currentYear}_${i}_txs`);
+    const active = i === currentMonth;
+    return `<button class="month-btn ${active?'active':''} ${hasTx&&!active?'has-data':''}" onclick="selectMonth(${i})">${m.slice(0,4)}</button>`;
+  }).join('');
+  document.getElementById('modal-month').classList.add('open');
+}
+
+function selectMonth(i) {
+  currentMonth = i;
+  updateMonthLabels();
+  closeModal('modal-month');
+  renderDashboard();
+  renderTxList();
+  renderBudgetScreen();
+}
+
+function updateMonthLabels() {
+  const label = `${MONTHS[currentMonth]} ${currentYear}`;
+  document.getElementById('currentMonthLabel').textContent = label;
+  document.getElementById('budget-month-label').textContent = label;
+  document.getElementById('analytics-month-label').textContent = label;
+  const expLabel = document.getElementById('export-month-label');
+  if (expLabel) expLabel.textContent = label;
+}
+
+// ═══════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════
+
+function renderDashboard() {
+  const income = totalRevenus();
+  const spent = totalDepenses();
+  const solde = income - spent;
+  const rate = pct(solde, income);
+  const walletDep = depensesByWallet();
+  const catDep = depensesByCat();
+  const budget = getBudget();
+  const totalBudget = Object.values(budget).reduce((s, v) => s + (v||0), 0);
+  const budgetPct = pct(spent, totalBudget || 1);
+  const reste = totalBudget - spent;
+
+  // KPIs
+  document.getElementById('kpi-income').textContent = fmt(income);
+  document.getElementById('kpi-solde').textContent = fmt(solde);
+  document.getElementById('kpi-rate').textContent = rate + '%';
+  document.getElementById('kpi-budget-pct').textContent = budgetPct + '%';
+  document.getElementById('kpi-budget-sub').textContent = fmt(spent) + ' / ' + fmt(totalBudget);
+
+  const soldeCard = document.getElementById('kpi-solde-card');
+  soldeCard.className = 'kpi ' + (solde >= 0 ? 'accent' : 'danger');
+  document.getElementById('kpi-rate-sub').textContent = rate >= 30 ? '✅ Objectif atteint' : 'objectif 30%';
+
+  const budCard = document.getElementById('kpi-budget-card');
+  budCard.className = 'kpi ' + (budgetPct >= 100 ? 'danger' : budgetPct >= 80 ? 'warn' : 'accent');
+
+  // Budgété vs Réel banner
+  document.getElementById('dash-budget-total').textContent = fmt(totalBudget);
+  document.getElementById('dash-spent-total').textContent = fmt(spent);
+  const ecartEl = document.getElementById('dash-ecart-total');
+  ecartEl.textContent = fmt(Math.abs(reste));
+  ecartEl.style.color = reste >= 0 ? 'var(--accent)' : 'var(--accent3)';
+  const barW = Math.min(budgetPct, 100);
+  const barColor = budgetPct >= 100 ? 'var(--accent3)' : budgetPct >= 80 ? 'var(--accent2)' : 'var(--accent)';
+  document.getElementById('dash-budget-bar').style.width = barW + '%';
+  document.getElementById('dash-budget-bar').style.background = barColor;
+  document.getElementById('dash-budget-msg').textContent = budgetPct >= 100
+    ? '🚨 Budget dépassé de ' + fmt(Math.abs(reste))
+    : budgetPct >= 80
+    ? '⚠️ ' + fmt(reste) + ' restant — attention !'
+    : '✅ ' + fmt(reste) + ' restant sur le budget';
+
+  // Alertes: catégories sans budget restant
+  const catsEpuisees = CATEGORIES.filter(c => {
+    const bud = budget[c.id] || 0;
+    const real = catDep[c.id] || 0;
+    return bud > 0 && real >= bud;
+  });
+  const alertesEl = document.getElementById('dash-alertes');
+  if (catsEpuisees.length > 0) {
+    alertesEl.innerHTML = `<div class="card" style="border-color:rgba(224,82,82,0.4);background:rgba(224,82,82,0.07);margin-bottom:12px">
+      <div class="card-header" style="color:var(--accent3)">🚨 Budget épuisé (${catsEpuisees.length})</div>
+      ${catsEpuisees.map(c => {
+        const real = catDep[c.id] || 0;
+        const bud = budget[c.id] || 0;
+        const dep = real - bud;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px">${c.emoji} ${c.label}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--accent3)">+${fmt(dep)} dépassé</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  } else {
+    alertesEl.innerHTML = '';
+  }
+
+  // Wallets — affiche dépenses + taux budget réel par portefeuille
+  const bw = getBudgetWallets();
+  const walletBudgetsReal = walletBudgetReal(budget, bw);
+  const hasWalletAssign = Object.keys(bw).length > 0;
+  // Fallback estimation si aucun portefeuille assigné
+  const walletBudgetsFallback = walletBudgetEstim(budget, catDep);
+  ['wave', 'djamo', 'orange', 'cash'].forEach(w => {
+    const dep = walletDep[w] || 0;
+    const wBud = hasWalletAssign ? (walletBudgetsReal[w] || 0) : (walletBudgetsFallback[w] || 0);
+    const wPct = wBud > 0 ? pct(dep, wBud) : (dep > 0 ? 0 : 0);
+    document.getElementById('w-' + w).textContent = fmt(dep);
+    document.getElementById('ws-' + w).textContent = 'Dépensé ce mois';
+    const badgeEl = document.getElementById('wb-' + w);
+    if (badgeEl) {
+      if (wBud > 0) {
+        badgeEl.textContent = wPct + '% du budget · ' + fmt(wBud) + ' alloué';
+        badgeEl.style.color = wPct >= 100 ? '#ff8fa3' : wPct >= 80 ? '#ffd166' : 'rgba(255,255,255,0.75)';
+      } else {
+        badgeEl.textContent = hasWalletAssign ? 'Aucun budget alloué' : '';
+        badgeEl.style.color = 'rgba(255,255,255,0.5)';
+      }
+    }
+  });
+
+  // Budget progress — toutes catégories avec budget (utilise splits si dispo)
+  const bwDash = getBudgetWallets();
+  const effectiveBudget = buildBudgetFromSplits(bwDash, budget);
+  const progList = document.getElementById('budget-progress-list');
+  const cats = CATEGORIES; // Toutes les catégories sans exception
+  const catsOK = cats.filter(c => (catDep[c.id]||0) < effectiveBudget[c.id]).length;
+  const progSummary = document.getElementById('progress-summary');
+  if (progSummary) progSummary.textContent = catsOK + '/' + cats.length + ' dans le budget';
+
+  // Recalcule totalBudget sur base effective
+  const totalBudgetEff = Object.values(effectiveBudget).reduce((s,v)=>s+(v||0),0);
+
+  if (cats.length === 0) {
+    progList.innerHTML = `<div class="empty"><div class="empty-sub">Budget pré-chargé depuis ton fichier Excel</div></div>`;
+  } else {
+    const sorted = cats.slice().sort((a,b) => {
+      const pa = pct(catDep[a.id]||0, effectiveBudget[a.id]);
+      const pb = pct(catDep[b.id]||0, effectiveBudget[b.id]);
+      return pb - pa;
+    });
+    const wColors = {wave:'#00C896',coffre_wave:'#00a57a',djamo:'#9B8CF0',orange:'#F5A623',cash:'#7A8FA6'};
+    progList.innerHTML = sorted.map(c => {
+      const bud = effectiveBudget[c.id] || 0;
+      const real = catDep[c.id] || 0;
+      const p = Math.min(pct(real, bud), 100);
+      const over = real > bud;
+      const cls = over ? 'fill-red' : p >= 80 ? 'fill-orange' : 'fill-green';
+      const splits = bwDash[c.id] || [];
+      // Mini badges portefeuilles
+      const miniWallets = splits.length > 1
+        ? ' <span style="font-size:9px;opacity:0.7">' + splits.map(s=>(WALLET_LABELS[s.wallet]||'').split(' ')[0]+' '+fmt(s.amount)).join(' + ') + '</span>'
+        : splits.length === 1 && splits[0].wallet
+          ? ' <span style="font-size:9px;color:' + (wColors[splits[0].wallet]||'var(--muted)') + '">' + (WALLET_LABELS[splits[0].wallet]||'') + '</span>'
+          : '';
+      return `<div class="progress-wrap">
+        <div class="progress-label">
+          <span style="font-size:12px">${c.emoji} ${c.label}${miniWallets}</span>
+          <span style="font-size:11px;color:${over?'var(--accent3)':'var(--muted)'};font-weight:${over?700:400}">${fmt(real)} / ${fmt(bud)}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill ${cls}" style="width:${p}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent txs
+  const txs = getTxs().slice().reverse().slice(0, 8);
+  const recentEl = document.getElementById('recent-tx-list');
+  if (txs.length === 0) {
+    recentEl.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Aucune dépense</div><div class="empty-sub">Appuyez sur + pour ajouter</div></div>`;
+  } else {
+    recentEl.innerHTML = txs.map(t => txHTML(t)).join('');
+  }
+}
+
+// Estime le budget attribué par portefeuille selon les transactions existantes
+function walletBudgetEstim(budget, catDep) {
+  // On répartit le budget total proportionnellement par portefeuille selon les dépenses réelles
+  const walletDep = depensesByWallet();
+  const totalDep = Object.values(walletDep).reduce((s,v)=>s+v,0);
+  const totalBudget = Object.values(budget).reduce((s,v)=>s+v,0);
+  const result = {};
+  ['wave','djamo','orange','cash'].forEach(w => {
+    const share = totalDep > 0 ? (walletDep[w]||0) / totalDep : 0.25;
+    result[w] = Math.round(totalBudget * share);
+  });
+  return result;
+}
+
+// ═══════════════════════════════════════════════
+//  TRANSACTIONS
+// ═══════════════════════════════════════════════
+
+function txHTML(t) {
+  const cat = CATEGORIES.find(c => c.id === t.category);
+  const emoji = cat ? cat.emoji : (t.type === 'revenu' ? '💰' : '💸');
+  const label = cat ? cat.label : (t.type === 'revenu' ? 'Revenu' : t.category);
+  const date = t.date ? new Date(t.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short'}) : '';
+  const wColor = WALLET_COLORS[t.wallet] || '#7A8FA6';
+  const wLabel = WALLET_LABELS[t.wallet] || t.wallet;
+  const amtColor = t.type === 'revenu' ? 'var(--accent)' : 'var(--accent3)';
+  const sign = t.type === 'revenu' ? '+' : '-';
+  return `<div class="tx-item" data-id="${t.id}">
+    <div class="tx-icon" style="background:${wColor}22">${emoji}</div>
+    <div class="tx-info">
+      <div class="tx-cat">${label}</div>
+      <div class="tx-desc">${t.desc || '—'}</div>
+      <div class="tx-wallet-badge" style="background:${wColor}22;color:${wColor}">${wLabel}</div>
+    </div>
+    <div class="tx-right">
+      <div class="tx-amount" style="color:${amtColor}">${sign}${fmt(t.amount)}</div>
+      <div class="tx-date">${date}</div>
+      <button class="delete-btn" onclick="deleteTx('${t.id}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function renderTxList() {
+  const txs = getTxs().slice().reverse();
+  const filtered = txFilter === 'all' ? txs : txs.filter(t => walletGroup(t.wallet) === txFilter);
+  const el = document.getElementById('tx-list');
+  if (filtered.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Aucune transaction</div><div class="empty-sub">Appuyez sur + pour ajouter</div></div>`;
+  } else {
+    el.innerHTML = filtered.map(t => txHTML(t)).join('');
+  }
+}
+
+function filterTx(wallet, el) {
+  txFilter = wallet;
+  document.querySelectorAll('#screen-transactions .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTxList();
+}
+
+function deleteTx(id) {
+  let txs = getTxs().filter(t => t.id !== id);
+  saveTxs(txs);
+  renderDashboard();
+  renderTxList();
+  showToast('Transaction supprimée');
+}
+
+// ═══════════════════════════════════════════════
+//  ADD MODAL
+// ═══════════════════════════════════════════════
+
+function openAddModal() {
+  // Set today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('tx-date').value = today;
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-desc').value = '';
+  currentTxType = 'depense';
+  document.getElementById('type-depense').classList.add('selected');
+  document.getElementById('type-revenu').classList.remove('selected');
+  populateCatSelect();
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function selectType(type, el) {
+  currentTxType = type;
+  document.querySelectorAll('#modal-add .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('cat-group').style.display = type === 'depense' ? 'block' : 'none';
+  if (type === 'revenu') openRevenusModal();
+}
+
+function openRevenusModal() {
+  closeModal('modal-add');
+  const r = getRevenus();
+  document.getElementById('rev-salaire').value = r.salaire || '';
+  document.getElementById('rev-13e').value = r.e13 || '';
+  document.getElementById('rev-14e').value = r.e14 || '';
+  document.getElementById('rev-extra').value = r.extra || '';
+  document.getElementById('modal-revenus').classList.add('open');
+}
+
+function saveRevenus() {
+  saveData('revenus', {
+    salaire: +document.getElementById('rev-salaire').value || 0,
+    e13: +document.getElementById('rev-13e').value || 0,
+    e14: +document.getElementById('rev-14e').value || 0,
+    extra: +document.getElementById('rev-extra').value || 0
+  });
+  closeModal('modal-revenus');
+  renderDashboard();
+  showToast('Revenus mis à jour ✅');
+}
+
+function populateCatSelect() {
+  const sel = document.getElementById('tx-category');
+  let groups = {};
+  CATEGORIES.forEach(c => {
+    if (!groups[c.group]) groups[c.group] = [];
+    groups[c.group].push(c);
+  });
+  sel.innerHTML = Object.entries(groups).map(([g, cats]) =>
+    `<optgroup label="${g}">${cats.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('')}</optgroup>`
+  ).join('');
+}
+
+function saveTx() {
+  const amount = +document.getElementById('tx-amount').value;
+  if (!amount || amount <= 0) { showToast('Montant invalide ❌'); return; }
+  const date = document.getElementById('tx-date').value;
+  if (!date) { showToast('Date requise ❌'); return; }
+
+  const tx = {
+    id: Date.now().toString(),
+    type: currentTxType,
+    date,
+    amount,
+    category: document.getElementById('tx-category').value,
+    wallet: document.getElementById('tx-wallet').value,
+    desc: document.getElementById('tx-desc').value,
+  };
+
+  const txs = getTxs();
+  txs.push(tx);
+  saveTxs(txs);
+  closeModal('modal-add');
+  renderDashboard();
+  renderTxList();
+  showToast('Transaction ajoutée ✅');
+}
+
+// ═══════════════════════════════════════════════
+//  BUDGET
+// ═══════════════════════════════════════════════
+
+function renderBudgetScreen() {
+  const budget = getBudget();
+  const bw = getBudgetWallets();
+  const catDep = depensesByCat();
+  let groups = {};
+  CATEGORIES.forEach(c => {
+    if (!groups[c.group]) groups[c.group] = [];
+    groups[c.group].push(c);
+  });
+
+  let html = '';
+  for (const [g, cats] of Object.entries(groups)) {
+    html += `<div class="section-title">${g}</div>`;
+    html += cats.map(c => {
+      const b = getBudgetForCat(c.id, budget, bw);
+      const r = catDep[c.id] || 0;
+      // Toutes catégories affichées — même sans budget ni dépense
+      const p = Math.min(pct(r, b || 1), 100);
+      const cls = p >= 100 ? 'fill-red' : p >= 80 ? 'fill-orange' : 'fill-green';
+      const wColors = {wave:'#00C896',coffre_wave:'#00a57a',djamo:'#9B8CF0',orange:'#F5A623',cash:'#7A8FA6'};
+      const splits = bw[c.id] || [];
+
+      // Badges portefeuilles avec montants
+      let walletBadges = '';
+      if (splits.length > 0) {
+        walletBadges = splits.map(s => {
+          const col = wColors[s.wallet] || 'var(--muted)';
+          const lbl = WALLET_LABELS[s.wallet] || s.wallet || '—';
+          return `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${col}22;color:${col};font-weight:600;margin-right:4px">${lbl} ${fmt(s.amount)}</span>`;
+        }).join('');
+      } else {
+        walletBadges = `<span style="font-size:10px;color:var(--muted)">— aucun portefeuille assigné</span>`;
+      }
+
+      return `<div class="card" style="padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:13px;font-weight:600">${c.emoji} ${c.label}</div>
+          <div style="font-size:12px;color:${r>b?'var(--accent3)':'var(--muted)'}">
+            <strong style="color:${r>b?'var(--accent3)':'var(--text)'}">${fmt(r)}</strong> / ${fmt(b)}
+          </div>
+        </div>
+        <div class="progress-track" style="margin-bottom:8px"><div class="progress-fill ${cls}" style="width:${p}%"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+          <div>${walletBadges}</div>
+          <span style="font-size:10px;color:${p>=100?'var(--accent3)':p>=80?'var(--accent2)':'var(--muted)'};font-weight:${p>=80?700:400}">${p}% consommé</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('budget-cat-list').innerHTML = html || `<div class="empty"><div class="empty-sub">Aucun budget configuré</div></div>`;
+}
+
+const WALLET_OPTS = [
+  {val:'wave', label:'🌊 Wave', color:'#00C896'},
+  {val:'coffre_wave', label:'🌊 Coffre Wave', color:'#00a57a'},
+  {val:'djamo', label:'💳 Djamo', color:'#9B8CF0'},
+  {val:'orange', label:'🟠 Orange Money', color:'#F5A623'},
+  {val:'cash', label:'💵 Cash', color:'#7A8FA6'},
+];
+
+function walletOptSelect(name, selectedVal='', placeholder='— Portefeuille —') {
+  return `<select class="form-select" name="${name}" style="padding:7px 8px;font-size:12px">
+    <option value="">${placeholder}</option>
+    ${WALLET_OPTS.map(o => `<option value="${o.val}" ${o.val===selectedVal?'selected':''}>${o.label}</option>`).join('')}
+  </select>`;
+}
+
+function splitRowHTML(catId, idx, wallet='', amount='') {
+  const wColor = WALLET_OPTS.find(o=>o.val===wallet)?.color || 'var(--border)';
+  return `<div class="split-row" id="split-${catId}-${idx}" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+    <select class="form-select" id="split-w-${catId}-${idx}" onchange="updateSplitColor('${catId}',${idx})"
+      style="flex:1;padding:7px 8px;font-size:12px;border-color:${wColor}">
+      <option value="">— Portefeuille —</option>
+      ${WALLET_OPTS.map(o=>`<option value="${o.val}" ${o.val===wallet?'selected':''}>${o.label}</option>`).join('')}
+    </select>
+    <input type="number" id="split-a-${catId}-${idx}" value="${amount}" placeholder="Montant" inputmode="numeric"
+      style="width:110px;padding:7px 8px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-weight:700;font-family:var(--font)" />
+    <button onclick="removeSplit('${catId}',${idx})" style="background:none;border:none;color:var(--accent3);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0">×</button>
+  </div>`;
+}
+
+function updateSplitColor(catId, idx) {
+  const sel = document.getElementById(`split-w-${catId}-${idx}`);
+  const w = sel?.value;
+  const color = WALLET_OPTS.find(o=>o.val===w)?.color || 'var(--border)';
+  if (sel) sel.style.borderColor = color;
+}
+
+function addSplit(catId) {
+  const container = document.getElementById(`splits-${catId}`);
+  const existing = container.querySelectorAll('.split-row');
+  const idx = existing.length;
+  const div = document.createElement('div');
+  div.innerHTML = splitRowHTML(catId, idx);
+  container.appendChild(div.firstElementChild);
+}
+
+function removeSplit(catId, idx) {
+  const row = document.getElementById(`split-${catId}-${idx}`);
+  if (row) row.remove();
+  updateSplitTotal(catId);
+}
+
+function updateSplitTotal(catId) {
+  const container = document.getElementById(`splits-${catId}`);
+  if (!container) return;
+  const amtInputs = container.querySelectorAll('[id^="split-a-"]');
+  let total = 0;
+  amtInputs.forEach(inp => total += +inp.value || 0);
+  const totalEl = document.getElementById(`split-total-${catId}`);
+  if (totalEl) {
+    totalEl.textContent = total > 0 ? 'Total: ' + fmt(total) : '';
+    totalEl.style.color = 'var(--accent)';
+  }
+}
+
+function openBudgetEditor() {
+  const legacyBudget = getBudget();
+  const bw = getBudgetWallets();
+  let groups = {};
+  CATEGORIES.forEach(c => {
+    if (!groups[c.group]) groups[c.group] = [];
+    groups[c.group].push(c);
+  });
+
+  let html = '';
+  for (const [g, cats] of Object.entries(groups)) {
+    html += `<div class="section-title" style="font-size:11px;margin:14px 0 8px;color:var(--accent)">${g}</div>`;
+    html += cats.map(c => {
+      // Récupère les splits existants ou construit depuis legacy
+      let splits = bw[c.id] || [];
+      if (splits.length === 0 && legacyBudget[c.id]) {
+        splits = [{wallet:'', amount: legacyBudget[c.id]}];
+      }
+      if (splits.length === 0) splits = [{wallet:'', amount:''}];
+
+      const splitsHTML = splits.map((s, i) => splitRowHTML(c.id, i, s.wallet||'', s.amount||'')).join('');
+      const totalVal = splits.reduce((sum,s)=>sum+(+s.amount||0),0);
+
+      return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--text)">${c.emoji} ${c.label}</div>
+          <div style="font-size:11px;color:var(--accent);font-weight:700" id="split-total-${c.id}">${totalVal>0?'Total: '+fmt(totalVal):''}</div>
+        </div>
+        <div id="splits-${c.id}" oninput="updateSplitTotal('${c.id}')">
+          ${splitsHTML}
+        </div>
+        <button onclick="addSplit('${c.id}')" style="background:rgba(0,200,150,0.1);border:1px dashed var(--accent);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;width:100%;font-family:var(--font)">
+          + Ajouter un portefeuille
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('budget-editor-fields').innerHTML = html;
+  document.getElementById('budget-editor-month').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+  document.getElementById('modal-budget').classList.add('open');
+}
+
+function saveBudget() {
+  const bw = {};   // { cat_id: [{wallet, amount}, ...] }
+  const budget = {}; // legacy: total par cat
+
+  CATEGORIES.forEach(c => {
+    const container = document.getElementById(`splits-${c.id}`);
+    if (!container) return;
+    const rows = container.querySelectorAll('.split-row');
+    const splits = [];
+    rows.forEach(row => {
+      const wSel = row.querySelector('[id^="split-w-"]');
+      const aInp = row.querySelector('[id^="split-a-"]');
+      const wallet = wSel?.value || '';
+      const amount = +aInp?.value || 0;
+      if (amount > 0) splits.push({wallet, amount});
+    });
+    if (splits.length > 0) {
+      bw[c.id] = splits;
+      budget[c.id] = splits.reduce((s,x)=>s+x.amount, 0);
+    }
+  });
+
+  saveData('budget', budget);
+  saveBudgetWallets(bw);
+  closeModal('modal-budget');
+  renderBudgetScreen();
+  renderDashboard();
+  showToast('Budget sauvegardé ✅');
+}
+
+// ═══════════════════════════════════════════════
+//  ANALYTICS
+// ═══════════════════════════════════════════════
+
+let catChartInst, walletChartInst;
+
+function renderAnalytics() {
+  const catDep = depensesByCat();
+  const walletDep = depensesByWallet();
+  const income = totalRevenus();
+  const spent = totalDepenses();
+  const solde = income - spent;
+  const budget = getBudget();
+
+  // ─ Cat Chart ─
+  const topCats = Object.entries(catDep)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, 8)
+    .map(([id, v]) => {
+      const c = CATEGORIES.find(x => x.id === id);
+      return { label: c ? c.label.slice(0,18) : id, value: v, emoji: c?.emoji||'💸' };
+    });
+
+  const ctx1 = document.getElementById('cat-chart').getContext('2d');
+  if (catChartInst) catChartInst.destroy();
+  catChartInst = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: topCats.map(c => c.emoji + ' ' + c.label),
+      datasets: [{ data: topCats.map(c => c.value), backgroundColor: '#00C89644', borderColor: '#00C896', borderWidth: 1.5, borderRadius: 6 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmtFull(ctx.raw) } }
+      },
+      scales: {
+        x: { ticks: { color: '#7A8FA6', callback: v => fmt(v) }, grid: { color: '#253548' } },
+        y: { ticks: { color: '#E8EDF2', font: { size: 10 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // ─ Wallet Chart ─
+  const wallets = Object.entries(walletDep).filter(([,v]) => v > 0);
+  const ctx2 = document.getElementById('wallet-chart').getContext('2d');
+  if (walletChartInst) walletChartInst.destroy();
+  if (wallets.length === 0) {
+    document.getElementById('wallet-chart').parentElement.innerHTML = `<div class="card-header">Répartition par portefeuille</div><div class="empty"><div class="empty-sub">Aucune donnée</div></div>`;
+    return;
+  }
+  walletChartInst = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: wallets.map(([w]) => WALLET_LABELS[w] || w),
+      datasets: [{
+        data: wallets.map(([,v]) => v),
+        backgroundColor: wallets.map(([w]) => WALLET_COLORS[w] || '#7A8FA6'),
+        borderWidth: 0, hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#E8EDF2', padding: 14, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${fmtFull(ctx.raw)} (${pct(ctx.raw, spent)}%)` } }
+      }
+    }
+  });
+
+  // ─ Advanced metrics ─
+  const taux = pct(solde, income);
+  const joursEcoules = currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear()
+    ? new Date().getDate() : new Date(currentYear, currentMonth+1, 0).getDate();
+  const joursTotal = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const depenseJournaliere = joursEcoules > 0 ? spent / joursEcoules : 0;
+  const projFin = depenseJournaliere * joursTotal;
+  const totalBudget = Object.values(budget).reduce((s,v)=>s+v,0);
+  const ecartBudget = totalBudget - spent;
+  const budgetPct = pct(spent, totalBudget||1);
+
+  function ring(pctVal, color, labelInside, name, detail, valueStr) {
+    const dash = Math.min(pctVal,100)*1.38;
+    return `<div class="metric-ring" style="position:relative">
+      <svg width="52" height="52" viewBox="0 0 52 52" style="flex-shrink:0">
+        <circle cx="26" cy="26" r="22" fill="none" stroke="#253548" stroke-width="4"/>
+        <circle cx="26" cy="26" r="22" fill="none" stroke="${color}" stroke-width="4"
+          stroke-dasharray="${dash} 138" stroke-linecap="round" transform="rotate(-90 26 26)"/>
+      </svg>
+      <div style="position:absolute;left:0;top:0;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${color}">${labelInside}</div>
+      <div class="metric-info">
+        <div class="metric-name">${name}</div>
+        <div class="metric-detail">${detail}</div>
+      </div>
+      <div class="metric-value" style="color:${color}">${valueStr}</div>
+    </div>`;
+  }
+
+  // Taux budget par portefeuille (utilise les budgets assignés manuellement si dispo)
+  const wDep = depensesByWallet();
+  const totalDep = Object.values(wDep).reduce((s,v)=>s+v,0);
+  const bwA = getBudgetWallets();
+  const hasAssign = Object.keys(bwA).length > 0;
+  const walletBudgReal = walletBudgetReal(budget, bwA);
+  const walletBudgEstim = walletBudgetEstim(budget, catDep);
+
+  const walletRows = ['wave','djamo','orange','cash'].map(w => {
+    const dep = wDep[w] || 0;
+    const wBud = hasAssign ? (walletBudgReal[w] || 0) : (walletBudgEstim[w] || 0);
+    const wPct = wBud > 0 ? pct(dep, wBud) : (dep > 0 ? 100 : 0);
+    const wColor = wPct >= 100 ? '#E05252' : wPct >= 80 ? '#F5A623' : '#00C896';
+    const wLabel = WALLET_LABELS[w];
+    const shareTotal = totalDep > 0 ? Math.round((dep/totalDep)*100) : 0;
+    const wColors = {wave:'#00C896',djamo:'#9B8CF0',orange:'#F5A623',cash:'#7A8FA6'};
+
+    // Liste des catégories assignées à ce portefeuille
+    const assignedCats = hasAssign
+      ? CATEGORIES.filter(c => bwA[c.id] === w || bwA[c.id] === 'coffre_wave' && w === 'wave')
+        .filter(c => true) // toutes catégories assignées
+        .map(c => c.emoji + ' ' + c.label.slice(0,20))
+        .join(', ')
+      : '';
+
+    return `<div style="background:var(--bg);border:1px solid ${wBud>0?wColors[w]+'44':'var(--border)'};border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700;color:${wColors[w]}">${wLabel}</span>
+        <span style="font-size:13px;font-weight:700;color:${wColor}">${wPct}%</span>
+      </div>
+      <div class="progress-track" style="margin-bottom:6px"><div class="progress-fill" style="width:${Math.min(wPct,100)}%;background:${wColor}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+        <span>Dépensé: <strong style="color:var(--text)">${fmt(dep)}</strong></span>
+        <span>Budget: <strong style="color:var(--text)">${wBud>0?fmt(wBud):'non défini'}</strong></span>
+        <span>${wPct>=100?'🚨 Atteint':wPct>=80?'⚠️ Attention':'✅ OK'}</span>
+      </div>
+      ${assignedCats ? `<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">${assignedCats}</div>` : (!hasAssign ? `<div style="font-size:10px;color:var(--muted);font-style:italic">Assigne des catégories dans 🎯 Budget</div>` : `<div style="font-size:10px;color:var(--muted);font-style:italic">Aucune catégorie assignée</div>`)}
+    </div>`;
+  }).join('');
+
+  // Catégories sans budget restant
+  const catsEpuisees = CATEGORIES.filter(c => {
+    const bud = budget[c.id] || 0;
+    const real = catDep[c.id] || 0;
+    return bud > 0 && real >= bud;
+  });
+  const catsSansbudget = CATEGORIES.filter(c => {
+    const real = catDep[c.id] || 0;
+    return real > 0 && !budget[c.id];
+  });
+
+  document.getElementById('advanced-metrics').innerHTML = `
+    <div style="margin-bottom:14px">
+      ${ring(taux, taux>=30?'#00C896':'#E05252', taux+'%', "Taux d'épargne", 'Objectif: 30% minimum', fmt(solde))}
+      ${ring(pct(joursEcoules,joursTotal), '#F5A623', joursEcoules+'j', 'Dépense journalière', joursEcoules+' jours / '+joursTotal, fmt(depenseJournaliere)+'/j')}
+      ${ring(pct(projFin,totalBudget||1), projFin<=totalBudget?'#00C896':'#E05252', pct(projFin,totalBudget||1)+'%', 'Projection fin de mois', projFin<=totalBudget?'✅ Dans le budget':'⚠️ Dépassement prévu', fmt(projFin))}
+      ${ring(budgetPct, budgetPct>=100?'#E05252':budgetPct>=80?'#F5A623':'#5B8DEF', budgetPct+'%', 'Budget global consommé', 'Reste: '+fmt(ecartBudget), fmt(spent))}
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px">💳 Taux par portefeuille</div>
+      ${walletRows}
+    </div>
+
+    ${catsEpuisees.length > 0 ? `<div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">🚨 Budget épuisé (${catsEpuisees.length} catégories)</div>
+      ${catsEpuisees.map(c => {
+        const real = catDep[c.id]||0, bud = budget[c.id]||0;
+        return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <span>${c.emoji} ${c.label}</span>
+          <span style="color:var(--accent3);font-weight:700">+${fmt(real-bud)} dépassé</span>
+        </div>`;
+      }).join('')}
+    </div>` : '<div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px;font-size:13px;color:var(--accent)">✅ Aucune catégorie hors budget !</div>'}
+
+    ${catsSansbudget.length > 0 ? `<div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">⚠️ Dépenses sans budget défini (${catsSansbudget.length})</div>
+      ${catsSansbudget.map(c => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span>${c.emoji} ${c.label}</span>
+        <span style="color:var(--accent2);font-weight:700">${fmt(catDep[c.id]||0)}</span>
+      </div>`).join('')}
+    </div>` : ''}
+  `;
+
+  // Groups
+  const groups = {};
+  CATEGORIES.forEach(c => {
+    if (!groups[c.group]) groups[c.group] = 0;
+    groups[c.group] += catDep[c.id] || 0;
+  });
+  const groupColors = { Travail:'#5B8DEF', Maison:'#00C896', Famille:'#F5A623', Yemi:'#FF8FA3', Église:'#B5A4FF', Entretien:'#88D8B0', Formation:'#FFD166', Autres:'#7A8FA6', Plaisir:'#F5A623' };
+  document.getElementById('group-metrics').innerHTML = Object.entries(groups)
+    .filter(([,v]) => v > 0)
+    .sort((a,b) => b[1]-a[1])
+    .map(([g, v]) => {
+      const p = pct(v, spent||1);
+      const col = groupColors[g] || '#7A8FA6';
+      return `<div class="progress-wrap" style="margin-bottom:10px">
+        <div class="progress-label">
+          <span style="font-size:12px;font-weight:600">${g}</span>
+          <span style="font-size:11px;color:var(--muted)">${fmt(v)} · ${p}%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${p}%;background:${col}"></div></div>
+      </div>`;
+    }).join('') || `<div class="empty"><div class="empty-sub">Aucune donnée</div></div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════════
+
+function closeModal(id, evt) {
+  if (evt && evt.target !== document.getElementById(id)) return;
+  document.getElementById(id).classList.remove('open');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════
+
+function exportCSV() {
+  const txs = getTxs();
+  const budget = getBudget();
+  const catDep = depensesByCat();
+  const monthLabel = MONTHS[currentMonth] + ' ' + currentYear;
+
+  // ── Feuille 1 : Journal des transactions ──
+  let csv = `\uFEFF`; // BOM pour Excel
+  csv += `JOURNAL DES TRANSACTIONS — ${monthLabel}\n`;
+  csv += `Date;Catégorie;Description;Portefeuille;Montant (FCFA);Type\n`;
+
+  txs.slice().sort((a,b) => a.date > b.date ? 1 : -1).forEach(t => {
+    const cat = CATEGORIES.find(c => c.id === t.category);
+    const label = cat ? cat.label : t.category;
+    const wallet = WALLET_LABELS[t.wallet] || t.wallet;
+    const date = t.date ? new Date(t.date).toLocaleDateString('fr-FR') : '';
+    csv += `${date};${label};${t.desc||''};${wallet};${t.amount};${t.type === 'depense' ? 'Dépense' : 'Revenu'}\n`;
+  });
+
+  csv += `\n`;
+  csv += `RÉSUMÉ PAR CATÉGORIE — ${monthLabel}\n`;
+  csv += `Catégorie;Groupe;Réel (FCFA);Budget (FCFA);Écart (FCFA)\n`;
+
+  CATEGORIES.forEach(c => {
+    const real = catDep[c.id] || 0;
+    const bud = budget[c.id] || 0;
+    if (real === 0 && bud === 0) return;
+    csv += `${c.label};${c.group};${real};${bud};${bud - real}\n`;
+  });
+
+  csv += `\n`;
+  csv += `RÉSUMÉ PAR PORTEFEUILLE — ${monthLabel}\n`;
+  csv += `Portefeuille;Dépenses (FCFA)\n`;
+  const walletDep = depensesByWallet();
+  Object.entries(WALLET_LABELS).forEach(([k, label]) => {
+    const v = walletDep[k] || 0;
+    if (v > 0) csv += `${label};${v}\n`;
+  });
+
+  csv += `\n`;
+  const income = totalRevenus();
+  const spent = totalDepenses();
+  csv += `SYNTHÈSE\n`;
+  csv += `Revenus;;${income}\n`;
+  csv += `Dépenses totales;;${spent}\n`;
+  csv += `Solde net;;${income - spent}\n`;
+  csv += `Taux d'épargne;;${pct(income-spent, income)}%\n`;
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `BudgetGuy_${monthLabel.replace(' ','_')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Export CSV téléchargé ✅');
+}
+
+function exportExcel() {
+  // Utilise SheetJS via CDN
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => doExportExcel();
+    document.head.appendChild(s);
+  } else {
+    doExportExcel();
+  }
+}
+
+function doExportExcel() {
+  const txs = getTxs();
+  const budget = getBudget();
+  const catDep = depensesByCat();
+  const walletDep = depensesByWallet();
+  const income = totalRevenus();
+  const spent = totalDepenses();
+  const monthLabel = MONTHS[currentMonth] + ' ' + currentYear;
+  const wb = XLSX.utils.book_new();
+
+  // ── Feuille 1 : Transactions ──
+  const txRows = [
+    ['Date', 'Catégorie', 'Groupe', 'Description', 'Portefeuille', 'Montant (FCFA)', 'Type']
+  ];
+  txs.slice().sort((a,b) => a.date > b.date ? 1 : -1).forEach(t => {
+    const cat = CATEGORIES.find(c => c.id === t.category);
+    txRows.push([
+      t.date ? new Date(t.date).toLocaleDateString('fr-FR') : '',
+      cat ? cat.label : t.category,
+      cat ? cat.group : '',
+      t.desc || '',
+      WALLET_LABELS[t.wallet] || t.wallet,
+      t.amount,
+      t.type === 'depense' ? 'Dépense' : 'Revenu'
+    ]);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(txRows);
+  ws1['!cols'] = [{wch:12},{wch:35},{wch:14},{wch:25},{wch:16},{wch:16},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Transactions');
+
+  // ── Feuille 2 : Résumé par catégorie ──
+  const catRows = [
+    ['Catégorie', 'Groupe', 'Réel (FCFA)', 'Budget (FCFA)', 'Écart (FCFA)', '% Consommé']
+  ];
+  CATEGORIES.forEach(c => {
+    const real = catDep[c.id] || 0;
+    const bud = budget[c.id] || 0;
+    if (real === 0 && bud === 0) return;
+    catRows.push([
+      c.label, c.group, real, bud, bud - real,
+      bud > 0 ? Math.round(real/bud*100) + '%' : 'N/A'
+    ]);
+  });
+  // Totaux
+  catRows.push(['', '', '', '', '', '']);
+  catRows.push(['TOTAL DÉPENSES', '', spent, Object.values(budget).reduce((s,v)=>s+v,0), '', '']);
+  const ws2 = XLSX.utils.aoa_to_sheet(catRows);
+  ws2['!cols'] = [{wch:38},{wch:14},{wch:14},{wch:14},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Par Catégorie');
+
+  // ── Feuille 3 : Par Portefeuille ──
+  const walletRows = [['Portefeuille', 'Dépenses (FCFA)', '% du total']];
+  Object.entries(WALLET_LABELS).forEach(([k, label]) => {
+    const v = walletDep[k] || 0;
+    if (v > 0) walletRows.push([label, v, spent > 0 ? Math.round(v/spent*100)+'%' : '0%']);
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(walletRows);
+  ws3['!cols'] = [{wch:18},{wch:18},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Par Portefeuille');
+
+  // ── Feuille 4 : Synthèse mensuelle ──
+  const rev = getRevenus();
+  const synthRows = [
+    ['SYNTHÈSE MENSUELLE — ' + monthLabel, ''],
+    ['', ''],
+    ['REVENUS', ''],
+    ['Salaire principal', rev.salaire || 0],
+    ['13e mois', rev.e13 || 0],
+    ['14e mois', rev.e14 || 0],
+    ['Revenus supplémentaires', rev.extra || 0],
+    ['TOTAL REVENUS', income],
+    ['', ''],
+    ['DÉPENSES', ''],
+    ['Total dépenses réalisées', spent],
+    ['Budget total prévu', Object.values(budget).reduce((s,v)=>s+v,0)],
+    ['', ''],
+    ['SOLDE NET', income - spent],
+    ["Taux d'épargne", pct(income-spent, income) + '%'],
+    ['Dépense journalière moy.', Math.round(spent / new Date().getDate())],
+  ];
+  const ws4 = XLSX.utils.aoa_to_sheet(synthRows);
+  ws4['!cols'] = [{wch:30},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws4, 'Synthèse');
+
+  XLSX.writeFile(wb, `BudgetGuy_${monthLabel.replace(' ','_')}.xlsx`);
+  showToast('Export Excel téléchargé ✅');
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+
+// Load Chart.js
+const script = document.createElement('script');
+script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+script.onload = () => {
+  updateMonthLabels();
+  renderDashboard();
+};
+document.head.appendChild(script);
+
+// Set current month to June (index 5) since that's the user's active month
+currentMonth = 5;
+currentYear = 2026;
+
+// ── BUDGETS ANNUELS PRÉ-CHARGÉS DEPUIS FICHIER EXCEL ──
+// Colonnes: Jan(0) Fev(1) Mar(2) Avr(3) Mai(4) Jui(5) Jul(6) Aou(7) Sep(8) Oct(9) Nov(10) Dec(11)
+const ANNUAL_BUDGETS = {
+  nourriture_travail:   [25000,25000,25000,25000,25000,25000,25000,25000,25000,25000,25000,25000],
+  transport_travail:    [82000,82000,82000,82000,82000,76000,82000,82000,82000,82000,82000,82000],
+  facture_cie:          [12500,12500,12500,12500,12500,12500,12500,12500,12500,12500,12500,12500],
+  facture_sodeci:       [9000,9000,9000,9000,9000,9000,9000,9000,9000,9000,9000,9000],
+  facture_internet:     [10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000],
+  facture_menagere:     [10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000],
+  produits_maison:      [5000,5000,5000,5000,0,5000,0,0,6500,0,5000,5000],
+  loyer_sami:           [0,0,0,0,0,0,0,0,0,0,0,0],
+  argent_poche_sami:    [15000,15000,15000,15000,20000,20000,15000,15000,15000,15000,15000,15000],
+  alimentation_yemi:    [0,0,0,120690,120691,73200,120693,120694,120695,120696,120697,120698],
+  sante_yemi:           [0,0,0,15000,15000,20000,15000,15000,15000,15000,15000,15000],
+  hygiene_yemi:         [0,0,0,0,0,0,20200,0,20200,20200,20200,20200],
+  vetements_yemi:       [0,0,0,0,0,25000,0,0,0,0,0,0],
+  nourriture_guy:       [40000,40000,40000,40000,40000,40000,40000,40000,40000,40000,40000,40000],
+  loyer_caro:           [45000,45000,45000,45000,45000,45000,45000,45000,45000,45000,45000,45000],
+  participation_papa:   [20000,20000,20000,20000,20000,20000,20000,20000,20000,20000,20000,20000],
+  dime:                 [49585,49585,49585,49585,9585,9585,9585,9585,9585,9585,9585,9585],
+  dons:                 [49585,49585,49585,49585,9585,19185,9585,9585,9585,9585,9585,9585],
+  quete:                [6500,6500,6500,6500,6501,6502,6503,6504,6505,6506,6507,6508],
+  entretien_coiffure:   [31600,31600,31600,31600,31600,30600,31600,31600,31600,31600,31600,31600],
+  entretien_savon:      [19000,19000,19000,19000,19000,9000,19000,19000,19000,19000,19000,19000],
+  entretien_parfum:     [22000,22000,22000,22000,22000,1200,22000,22000,22000,22000,22000,22000],
+  toastmaster:          [30000,30000,30000,30000,45000,60000,15000,15000,15000,15000,15000,15000],
+  transport_tm:         [6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000],
+  frais_bancaires:      [11342,9000,9000,9000,9000,11342,9000,9000,9000,9000,9000,9000],
+  cotisation_imprevus:  [30000,30000,30000,30000,0,266500,10000,10000,50000,50000,10000,100000],
+  telephone_internet:   [4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000],
+  reparation_vetement:  [0,0,0,0,0,0,0,20000,0,0,0,0],
+  sport_sante:          [33000,33000,33000,33000,4000,4000,4000,4000,4000,4000,4000,4000],
+  sorties:              [40000,40000,40000,40000,60000,60000,30000,30000,30000,30000,30000,30000],
+  transport_perso:      [50000,50000,50000,50000,128000,60000,128000,128000,128000,128000,128000,128000],
+  activite_decouverte:  [0,0,0,0,80000,30000,80000,80000,80000,80000,80000,80000],
+};
+
+// Revenus par mois depuis l'Excel
+const ANNUAL_REVENUS = [
+  {salaire:957500,e13:0,e14:0,extra:0},   // Jan
+  {salaire:957500,e13:0,e14:0,extra:0},   // Fev
+  {salaire:957500,e13:0,e14:0,extra:0},   // Mar
+  {salaire:957500,e13:0,e14:0,extra:0},   // Avr
+  {salaire:957500,e13:0,e14:0,extra:0},   // Mai
+  {salaire:959500,e13:0,e14:0,extra:0},   // Juin
+  {salaire:957500,e13:0,e14:0,extra:0},   // Jul
+  {salaire:957500,e13:0,e14:0,extra:0},   // Aou
+  {salaire:957500,e13:0,e14:0,extra:0},   // Sep
+  {salaire:957500,e13:0,e14:0,extra:0},   // Oct
+  {salaire:957500,e13:957500,e14:0,extra:0},  // Nov (13e mois)
+  {salaire:957500,e13:0,e14:957500,extra:350000}, // Dec (14e + EOY)
+];
+
+(function seedAllBudgets() {
+  // Pré-charge les budgets des 12 mois si pas encore défini par l'utilisateur
+  for (let m = 0; m < 12; m++) {
+    const keyBud = `budgetguy_2026_${m}_budget`;
+    const keyRev = `budgetguy_2026_${m}_revenus`;
+    if (!localStorage.getItem(keyBud)) {
+      const bud = {};
+      Object.entries(ANNUAL_BUDGETS).forEach(([cat, arr]) => {
+        if (arr[m] > 0) bud[cat] = arr[m];
+      });
+      localStorage.setItem(keyBud, JSON.stringify(bud));
+    }
+    if (!localStorage.getItem(keyRev)) {
+      localStorage.setItem(keyRev, JSON.stringify(ANNUAL_REVENUS[m]));
+    }
+  }
+
+  // Pré-charge les transactions Juin si pas encore fait
+  const key_txs = 'budgetguy_2026_5_txs';
+  if (!localStorage.getItem(key_txs)) {
+    const txs = [
+      {id:'s1',type:'depense',date:'2026-06-01',amount:15150,category:'sorties',wallet:'coffre_wave',desc:'HBC'},
+      {id:'s2',type:'depense',date:'2026-06-01',amount:4520,category:'transport_perso',wallet:'coffre_wave',desc:'Transport'},
+      {id:'s3',type:'depense',date:'2026-06-01',amount:11715,category:'nourriture_guy',wallet:'coffre_wave',desc:'tantie alice + KFC + O porco'},
+      {id:'s4',type:'depense',date:'2026-06-02',amount:10000,category:'facture_internet',wallet:'orange',desc:''},
+      {id:'s5',type:'depense',date:'2026-06-02',amount:10000,category:'facture_menagere',wallet:'orange',desc:''},
+      {id:'s6',type:'depense',date:'2026-06-02',amount:45000,category:'loyer_caro',wallet:'wave',desc:''},
+      {id:'s7',type:'depense',date:'2026-06-02',amount:73200,category:'alimentation_yemi',wallet:'coffre_wave',desc:''},
+      {id:'s8',type:'depense',date:'2026-06-02',amount:20000,category:'sante_yemi',wallet:'coffre_wave',desc:''},
+      {id:'s9',type:'depense',date:'2026-06-02',amount:25000,category:'vetements_yemi',wallet:'coffre_wave',desc:''},
+      {id:'s10',type:'depense',date:'2026-06-02',amount:20000,category:'participation_papa',wallet:'cash',desc:'Invitation maman copa ella'},
+      {id:'s11',type:'depense',date:'2026-06-03',amount:40000,category:'cotisation_imprevus',wallet:'coffre_wave',desc:'Achat sac maman elisa'},
+      {id:'s12',type:'depense',date:'2026-06-03',amount:166500,category:'cotisation_imprevus',wallet:'djamo',desc:''},
+      {id:'s13',type:'depense',date:'2026-06-03',amount:45000,category:'toastmaster',wallet:'djamo',desc:''},
+      {id:'s14',type:'depense',date:'2026-06-02',amount:6440,category:'produits_maison',wallet:'wave',desc:''},
+    ];
+    localStorage.setItem(key_txs, JSON.stringify(txs));
+  }
+})();
+
+updateMonthLabels();
+</script>
+</body>
+</html>
